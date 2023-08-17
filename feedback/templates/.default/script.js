@@ -11,6 +11,7 @@ formElement.addEventListener('submit', function (event) {
                     email: formData.get('email'),
                     phone: formData.get('phone'),
                     message: formData.get('message'),
+                    files: formData.getAll('images[]'),
                 }
             },
         })

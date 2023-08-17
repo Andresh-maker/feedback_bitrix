@@ -8,6 +8,7 @@ use Bitrix\Main\SystemException;
 
 class Feedback extends CBitrixComponent implements Controllerable, Errorable
 {
+    protected const BLOCK_FEEDBACK_ID = 19;
     protected ErrorCollection $errorCollection;
 
     /**
@@ -63,14 +64,42 @@ class Feedback extends CBitrixComponent implements Controllerable, Errorable
     {
         try {
             $this->validateForm($fields);
-            // TODO Добавление результат в инфоблок или в модуль форм
+            $elementId = $this->addElement($fields);
+
             return [
-                "result" => "Ваше сообщение принято",
+                "result" => "Ваше сообщение принято. Номер заявки #$elementId",
             ];
         } catch (SystemException $e) {
             return [
                 "result" => $e->getMessage(),
             ];
+        }
+    }
+
+    /**
+     * Запись данных в инфоблок
+     * @param $fields
+     * @return int|null
+     * @throws SystemException
+     */
+    protected function addElement($fields): ?int
+    {
+        $el = new CIBlockElement;
+        $PROP['FILE_LIST'] = $fields['files'];
+        $PROP['EMAIL'] = $fields['email'];
+        $PROP['PHONE'] = $fields['phone'];
+        $PROP['COMMENT'] = $fields['message'];
+        $arLoadProductArray = [
+            "IBLOCK_ID"       => self::BLOCK_FEEDBACK_ID,
+            "PROPERTY_VALUES" => $PROP,
+            "NAME"            => $fields['name'],
+        ];
+
+        if($elementId = $el->Add($arLoadProductArray)) {
+            return $elementId;
+        } else {
+            $this->errorCollection[] = new Error($el->LAST_ERROR);
+            throw new SystemException('Ошибка добавления элемента');
         }
     }
 
